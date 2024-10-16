@@ -11,6 +11,8 @@ function deepEqual(...args) {
         getType(payload) {
             if (Array.isArray(payload)) return 'array';
 
+            if (payload === null) return 'primitive';
+
             if (typeof payload === 'object') return 'object';
 
             if (typeof payload === 'function') return 'function';
