@@ -1,0 +1,26 @@
+{
+	"name": "4-get-path",
+	"version": "1.0.0",
+	"description": "Here you can find the code dedicated to the third task of javascript block. It implements getPath function in Vanilla JS.",
+	"main": "index.js",
+	"engines": {
+		"node": "20.15.0",
+		"npm": "10.7.0"
+	},
+	"directories": {
+		"test": "test"
+	},
+	"scripts": {
+		"test": "node --test --experimental-test-coverage",
+		"test:watch": "node --test --watch --experimental-test-coverage",
+		"lint": "eslint src/ --cache"
+	},
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@eslint/js": "9.13.0",
+		"eslint": "9.13.0",
+		"globals": "15.11.0",
+		"jsdom": "25.0.1"
+	}
+}
