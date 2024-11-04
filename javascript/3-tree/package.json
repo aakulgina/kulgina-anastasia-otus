@@ -1,0 +1,28 @@
+{
+	"name": "3-tree",
+	"version": "1.0.0",
+	"description": "Here you can find the code dedicated to the second task of javascript block. It implements ```tree``` script in Vanilla JS.",
+	"main": "bin/tree.js",
+	"type": "module",
+	"engines": {
+		"node": "20.15.0",
+		"npm": "10.7.0"
+	},
+	"bin": {
+		"customTree": "./bin/tree.js"
+	},
+	"scripts": {
+		"link": "npm link",
+		"lint": "eslint bin/ --cache"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"yargs": "17.7.2"
+	},
+	"devDependencies": {
+		"@eslint/js": "9.14.0",
+		"eslint": "9.14.0"
+	}
+}
