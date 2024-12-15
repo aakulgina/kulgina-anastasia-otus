@@ -22,9 +22,11 @@ Tech Stack:
 This piece of work aims to the following points:
 - define the tech stack for backend part of the app
 - make some boilerplate code
-- define and describe the key features
+- define and describe the [key features](./docs/KeyFeatures.md)
 - define and describe data structure
-- define endpoints, implement RESTful API
-- create some docs, setup swagger
+- define endpoints
+- implement RESTful API
+- create some docs
+- setup swagger
 - create api tests
 - implement auth strategy and new users register.
