@@ -30,3 +30,14 @@ This piece of work aims to the following points:
 - setup swagger
 - create api tests
 - implement auth strategy and new users register.
+
+#### Homework 7 (lesson 15). Database
+This piece of work aims to the following points:
+- design database structure
+- create and connect database
+- fill database with some mock data
+
+#### Homework 8 (lesson 17)/ CI/CD
+This piece of work aims to the following points:
+- create CI/CD pipeline
+- successfully deploy the app
