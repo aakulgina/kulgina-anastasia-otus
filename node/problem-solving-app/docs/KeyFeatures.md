@@ -16,8 +16,6 @@
 * Filter/sort problems in the list
 * Get specific problem
 * Get problems list/statistics/etc solved by the user
-
-## Solutions Module
 * Solve specific problem
 * Get problem's solutions
 * Get specific solution for a problem

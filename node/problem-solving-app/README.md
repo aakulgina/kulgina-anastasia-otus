@@ -37,7 +37,7 @@ This piece of work aims to the following points:
 - create and connect database
 - fill database with some mock data
 
-#### Homework 8 (lesson 17)/ CI/CD
+#### Homework 8 (lesson 17). CI/CD
 This piece of work aims to the following points:
 - create CI/CD pipeline
 - successfully deploy the app
