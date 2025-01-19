@@ -13,7 +13,7 @@
 
 ## Problems Module
 * Get problems list
-* Filter/sort problems in the list
+* Filter problems in the list
 * Get specific problem
 * Get problems list/statistics/etc solved by the user
 * Solve specific problem
