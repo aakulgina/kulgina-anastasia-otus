@@ -3,12 +3,11 @@
 ## Auth Module
 * Register new user
 * Login existing user
-* Change password
-* Reset password
 
 ## Users Module
 * Get specific user profile
 * Change user profile data
+* Change password
 * Delete user profile
 
 ## Problems Module
