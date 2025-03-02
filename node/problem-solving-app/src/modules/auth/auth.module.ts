@@ -18,7 +18,6 @@ import { JWTAccessTokenStrategy } from './strategies/jwt.strategy';
 		}),
 	],
 	controllers: [AuthController],
-	providers: [AuthService, JWTAccessTokenStrategy]
+	providers: [AuthService, JWTAccessTokenStrategy],
 })
-
-export class AuthModule { }
+export class AuthModule {}

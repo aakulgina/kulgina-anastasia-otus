@@ -5,6 +5,15 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+	// In case of enabling https
+	// Local self-signed cert may be issued with mkcert
+	// Prod cert may be issued with lets encrypt or whatever available CA
+	// To use it pass cert setting in the second arg of .create()
+	// DO NOT PUSH TO GIT! IGNORE IT! Use env vars instead and store securely
+	// const httpsOptions = {
+    //     key: fs.readFileSync('path/to/key'),
+    //     cert: fs.readFileSync('path/to/cert'),
+    // };
 	const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
 	app.enableCors({
