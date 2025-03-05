@@ -1,19 +1,37 @@
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Submission } from '../problems/problem.submission.entity';
+
+@Entity()
 export class User {
-    // Primary key
-    id: number;
+	@PrimaryGeneratedColumn()
+	id: number;
 
-    // Column, unique, user_name for db, min length = 3, max length = 128, text
-    userName: string;
+	@Column({
+		type: 'varchar',
+		length: 50,
+		unique: true,
+	})
+	userName: string;
 
-    // Column, unique, text, some email validation
-    email: string;
+	@Column({
+		type: 'varchar',
+		length: 100,
+		unique: true,
+	})
+	email: string;
 
-    // Column, select false, hash or whatever could make it safe
-    password: string;
+	@Column({
+		type: 'varchar',
+		length: 120,
+	})
+	password: string;
 
-    // Many to many: one user can solve many tasks, one task can be solved by many users
-    solutions: Array<number>;
+	@OneToMany(_type => Submission, submission => submission.user)
+	solutions: Array<Submission>;
 
-    // Column, last_seen for db, Date/datetime/timestamp
-    lastSeen: Date;
+	@Column({
+		type: 'timestamptz',
+		precision: 3,
+	})
+	lastSeen: Date;
 }

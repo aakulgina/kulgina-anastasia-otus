@@ -1,12 +1,14 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { IsEmail, IsString, Length } from "class-validator";
 
 export class ChangeUserProfileRequestDto {
     @IsString()
+    @Length(3, 50)
     @ApiPropertyOptional()
     userName?: string;
 
     @IsString()
+    @IsEmail()
     @ApiPropertyOptional()
     email?: string;
 }

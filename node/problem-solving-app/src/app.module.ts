@@ -3,9 +3,13 @@ import { UsersModule } from './modules/users/users.module';
 import { ProblemsModule } from './modules/problems/problems.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { dbConnectionOptions } from './common/typeorm';
+import { DataSource } from 'typeorm';
 
 @Module({
 	imports: [
+		TypeOrmModule.forRoot(dbConnectionOptions),
 		ThrottlerModule.forRoot({
 			throttlers: [
 				{
@@ -20,4 +24,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
 		AuthModule,
 	],
 })
-export class AppModule {}
+export class AppModule {
+	constructor(private dataSource: DataSource) {}
+}

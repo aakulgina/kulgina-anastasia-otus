@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	Injectable,
+	InternalServerErrorException,
+	NotFoundException,
+} from '@nestjs/common';
 import { ProblemsListFilter } from './dto/ProblemsListFilter.dto';
 import { AddNewSolutionRequestDto } from './dto/AddNewSolution.request.dto';
 import { Problem } from './problem.entity';
@@ -12,145 +17,165 @@ import { GetProblemSolutionsListResponseDto } from './dto/GetProblemSolutionsLis
 import { ProgLanguage } from './enum/ProgLanguage.enum';
 import { SolutionDto } from './dto/Solution.dto';
 import { AddNewSolutionResponseDto } from './dto/AddNewSolution.response.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ProblemsService {
-    // TODO Place db connection here later 
-    private problems: Array<Problem> = [];
-    private solutions: Array<Submission> = [];
+	constructor(
+		@InjectRepository(Problem)
+		private problemsRepository: Repository<Problem>,
 
-    getProblemsList(
-        filters?: ProblemsListFilter,
-        page?: PaginationQueryDto
-    ): GetProblemsListResponseDto {
-        try {
-            console.log(`Hello getProblemsList, I got ${Object.keys(filters ?? {}).length ? 'some' : 'no'} filters and ${Object.keys(page ?? {}).length ? 'some' : 'no'} info about pagination`);
+		@InjectRepository(Submission)
+		private submissionsRepository: Repository<Submission>,
+	) {}
 
-            const payload: GetProblemsListResponseDto = {
-                total: 1,
-                page: {
-                    pageNumber: 1,
-                    pageSize: 10,
-                    totalPages: 1,
-                },
-                problems: [
-                    {
-                        id: 1,
-                        title: 'Hello world!',
-                        difficulty: ProblemDifficulty.EASY,
-                        topics: [ProblemTopic.STRING],
-                    },
-                ]
-            };
+	// TODO Place db connection here later
+	private problems: Array<any> = [];
+	private solutions: Array<any> = [];
 
-            return payload;
-        } catch (error) {
-            throw new InternalServerErrorException(error);
-        }
-    }
+	getProblemsList(
+		filters?: ProblemsListFilter,
+		page?: PaginationQueryDto,
+	): GetProblemsListResponseDto {
+		try {
+			console.log(
+				`Hello getProblemsList, I got ${Object.keys(filters ?? {}).length ? 'some' : 'no'} filters and ${Object.keys(page ?? {}).length ? 'some' : 'no'} info about pagination`,
+			);
 
-    getProblem(problemId: string): ProblemDto {
-        if (!problemId) {
-            throw new NotFoundException();
-        }
+			const payload: GetProblemsListResponseDto = {
+				total: 1,
+				page: {
+					pageNumber: 1,
+					pageSize: 10,
+					totalPages: 1,
+				},
+				problems: [
+					{
+						id: 1,
+						title: 'Hello world!',
+						difficulty: ProblemDifficulty.EASY,
+						topics: [ProblemTopic.STRING],
+					},
+				],
+			};
 
-        try {    
-            console.log(`Hello getProblem, I gonna find you the problem with the following id: ${problemId}`);
+			return payload;
+		} catch (error) {
+			throw new InternalServerErrorException(error);
+		}
+	}
 
-            return {
-                id: 1,
-                title: 'Hello world!',
-                description: 'Print "Hello world!"',
-                difficulty: ProblemDifficulty.EASY,
-                topics: [ProblemTopic.STRING],
-            }
-        } catch (error) {
-            throw new InternalServerErrorException(error)
-        }
-    }
-    
-    getProblemSolutionsList(
-        problemId: string,
-        userId?: string,
-        page?: PaginationQueryDto,
-    ): GetProblemSolutionsListResponseDto {
-        if (!problemId) {
-            throw new NotFoundException();
-        }
+	getProblem(problemId: string): ProblemDto {
+		if (!problemId) {
+			throw new NotFoundException();
+		}
 
-        try {
-            console.log(`Hello getProblemSolutionsList, I gonna list you all the solutions for the problem with the following id: ${problemId}` + (userId ? `. I gonna do it for the user with id ${userId}` : ''));
-            console.log(page);
+		try {
+			console.log(
+				`Hello getProblem, I gonna find you the problem with the following id: ${problemId}`,
+			);
 
-            const payload: GetProblemSolutionsListResponseDto = {
-                problemId: '1',
-                total: 1,
-                page: {
-                    pageSize: 10,
-                    pageNumber: 1,
-                    totalPages: 1,
-                },
-                solutions: [
-                    {
-                        id: 1,
-                        created: (new Date()).toISOString(),
-                        lang: ProgLanguage.TYPESCRIPT,
-                    }
-                ],
-            };
+			return {
+				id: 1,
+				title: 'Hello world!',
+				description: 'Print "Hello world!"',
+				difficulty: ProblemDifficulty.EASY,
+				topics: [ProblemTopic.STRING],
+			};
+		} catch (error) {
+			throw new InternalServerErrorException(error);
+		}
+	}
 
-            return payload;
-        } catch (error) {
-            throw new InternalServerErrorException(error);
-        }
-    }
+	getProblemSolutionsList(
+		problemId: string,
+		userId?: string,
+		page?: PaginationQueryDto,
+	): GetProblemSolutionsListResponseDto {
+		if (!problemId) {
+			throw new NotFoundException();
+		}
 
-    getProblemSolution(
-        problemId: string,
-        solutionId: string,
-    ): SolutionDto {
-        if (!problemId || !solutionId) {
-            throw new NotFoundException();
-        }
+		try {
+			console.log(
+				`Hello getProblemSolutionsList, I gonna list you all the solutions for the problem with the following id: ${problemId}` +
+					(userId
+						? `. I gonna do it for the user with id ${userId}`
+						: ''),
+			);
+			console.log(page);
 
-        try {
-            console.log(`Hello getProblemSolution, I gonna give you the solution with id ${solutionId} for the problem with id ${problemId}`);
-            
-            const payload: SolutionDto = {
-                id: 1,
-                userName: 'geek_cactus',
-                correct: false,
-                created: (new Date()).toISOString(),
-                lang: ProgLanguage.TYPESCRIPT,
-                content: 'Your solution here',
-            }
+			const payload: GetProblemSolutionsListResponseDto = {
+				problemId: '1',
+				total: 1,
+				page: {
+					pageSize: 10,
+					pageNumber: 1,
+					totalPages: 1,
+				},
+				solutions: [
+					{
+						id: 1,
+						created: new Date().toISOString(),
+						lang: ProgLanguage.TYPESCRIPT,
+					},
+				],
+			};
 
-            return payload;
-        } catch (error) {
-            throw new InternalServerErrorException(error);
-        }
-    }
+			return payload;
+		} catch (error) {
+			throw new InternalServerErrorException(error);
+		}
+	}
 
-    addNewSolution(
-        problemId: string,
-        solution: AddNewSolutionRequestDto,
-    ): AddNewSolutionResponseDto {
-        if (!problemId) {
-            throw new NotFoundException();
-        }
+	getProblemSolution(problemId: string, solutionId: string): SolutionDto {
+		if (!problemId || !solutionId) {
+			throw new NotFoundException();
+		}
 
-        if (!solution) {
-            throw new BadRequestException();
-        }
+		try {
+			console.log(
+				`Hello getProblemSolution, I gonna give you the solution with id ${solutionId} for the problem with id ${problemId}`,
+			);
 
-        try {            
-            console.log(`Hello addNewSolution, I gonna add new solution to the problem with id ${[problemId]}`);
+			const payload: SolutionDto = {
+				id: 1,
+				userName: 'geek_cactus',
+				correct: false,
+				created: new Date().toISOString(),
+				lang: ProgLanguage.TYPESCRIPT,
+				content: 'Your solution here',
+			};
 
-            const payload = { submissionId: '444' };
+			return payload;
+		} catch (error) {
+			throw new InternalServerErrorException(error);
+		}
+	}
 
-            return payload;
-        } catch (error) {
-            throw new InternalServerErrorException();
-        }
-    }
+	addNewSolution(
+		problemId: string,
+		solution: AddNewSolutionRequestDto,
+	): AddNewSolutionResponseDto {
+		if (!problemId) {
+			throw new NotFoundException();
+		}
+
+		if (!solution) {
+			throw new BadRequestException();
+		}
+
+		try {
+			console.log(
+				`Hello addNewSolution, I gonna add new solution to the problem with id ${[problemId]}`,
+			);
+
+			const payload = { submissionId: '444' };
+
+			return payload;
+		} catch (_error) {
+			throw new InternalServerErrorException();
+		}
+	}
 }

@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -11,9 +12,9 @@ async function bootstrap() {
 	// To use it pass cert setting in the second arg of .create()
 	// DO NOT PUSH TO GIT! IGNORE IT! Use env vars instead and store securely
 	// const httpsOptions = {
-    //     key: fs.readFileSync('path/to/key'),
-    //     cert: fs.readFileSync('path/to/cert'),
-    // };
+	//     key: fs.readFileSync('path/to/key'),
+	//     cert: fs.readFileSync('path/to/cert'),
+	// };
 	const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
 	app.enableCors({
@@ -27,7 +28,9 @@ async function bootstrap() {
 
 	const config = new DocumentBuilder()
 		.setTitle('Problem Solving App')
-		.setDescription('API description for an app created during studying at Otus Online School')
+		.setDescription(
+			'API description for an app created during studying at Otus Online School',
+		)
 		.setVersion('1.0')
 		.addCookieAuth('accessToken')
 		.build();

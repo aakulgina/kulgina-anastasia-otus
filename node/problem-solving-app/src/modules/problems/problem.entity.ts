@@ -1,21 +1,32 @@
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { ProblemDifficulty } from "./enum/ProblemDifficulty.enum";
+import { Submission } from "./problem.submission.entity";
+import { Topic } from "./problem.topic.entity";
+
+@Entity()
 export class Problem {
-    // Primary key
+    @PrimaryGeneratedColumn()
     id: number;
 
-    // Column, some not very long text
+    @Column({
+        type: 'varchar',
+        length: 100,
+    })
     title: string;
 
-    // Column, some very long piece of text
+    @Column('text')
     description: string;
 
-    // Column, enum ProblemDifficulty
-    difficulty: number;
+    @Column({
+        type: 'enum',
+        enum: ProblemDifficulty,
+    })
+    difficulty: ProblemDifficulty;
 
-    // Column, enum ProblemTopic
-    // Many to many: one problem may be connected with several topics
-    // one topic may be connected to several problems
-    topics: Array<number>;
+    @ManyToMany(_type => Topic, topic => topic.problems)
+    @JoinTable()
+    topics: Array<Topic>;
 
-    // One to one: one submission is for only one problem
-    submissions: Array<number>;
+    @OneToMany(_type => Submission, submission => submission.problem)
+    submissions: Array<Submission>;
 }

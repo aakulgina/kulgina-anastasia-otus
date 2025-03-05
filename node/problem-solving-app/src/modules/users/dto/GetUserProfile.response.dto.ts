@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { IsEmail, IsString, Length } from "class-validator";
 
 export class GetUserProfileResponseDto {
     @IsString()
@@ -7,10 +7,12 @@ export class GetUserProfileResponseDto {
     id: string;
     
     @IsString()
+    @Length(3, 50)
     @ApiProperty({ required: true })
     userName: string;
     
     @IsString()
+    @IsEmail()
     @ApiProperty({ required: true })
     email: string;
     

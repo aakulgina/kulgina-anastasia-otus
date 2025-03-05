@@ -4,11 +4,17 @@ import { CreateUserDto } from './dto/CreateUser.dto';
 import { User } from './user.entity';
 import { ChangeUserPasswordRequestDto } from './dto/ChangeUserPassword.request.dto';
 import { ChangeUserProfileRequestDto } from './dto/ChangeUserProfile.request.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
-    // TODO Place db connection here later 
-    private users: Array<User> = [];
+    constructor(
+        @InjectRepository(User)
+        private usersRepository: Repository<User>,
+    ) {}
+
+    private users: Array<any> = [];
 
     createNewUser(user: CreateUserDto) {
         const payload = {
@@ -18,7 +24,10 @@ export class UsersService {
             lastSeen: new Date(),
         }
 
-        this.users.push(payload as User);
+        // TODO import validate from class-validator
+        // e.g. const errors = await validate(payload)
+
+        this.users.push(payload);
 
         return payload;
     }

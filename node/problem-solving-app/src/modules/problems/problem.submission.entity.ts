@@ -1,22 +1,34 @@
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "../users/user.entity";
+import { ProgLanguage } from "./enum/ProgLanguage.enum";
+import { Problem } from "./problem.entity";
+
+@Entity()
 export class Submission {
-    // Primary key
+    @PrimaryGeneratedColumn()
     id: number;
 
-    // One to one: one solution may be connected to only one task
-    problem: number;
+ 	@ManyToOne(_type => Problem, problem => problem.submissions)
+	problem: Problem;
 
-    // One to one: one solution (even not unique) may be sent by only one user
-    user: number;
+    @ManyToOne(_type => User, user => user.solutions)
+    user: User;
 
-    // Column, boolean, in the solution is correct
-    correct: boolean;
+    @Column('boolean')
+	correct: boolean;
 
-    // Column, date/timestamp/whatever indicated when the solution was submitted
-    created: Date;
+    @Column({
+		type: 'timestamptz',
+		precision: 3,
+	})
+	created: Date;
 
-    // Column, enum
-    lang: number;
+    @Column({
+		type: 'enum',
+		enum: ProgLanguage,
+	})
+    lang: ProgLanguage;
 
-    // Column, some huge text type
-    content: string;
+    @Column('text')
+	content: string;
 }
