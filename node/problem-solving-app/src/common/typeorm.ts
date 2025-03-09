@@ -9,7 +9,7 @@ export const dbConnectionOptions: TypeOrmModuleOptions = {
 	password: '', // 'Here gonna be some env var or etc', // TODO
 	database: '', // 'Here gonna be some env var or etc', // TODO
 	entities: ['dist/**/*.entity{.ts,.js}'],
-	migrations: ['src/migrations/**/*'],
+	migrations: ['dist/migrations/**/*'],
 	autoLoadEntities: true,
 	synchronize: false,
 };

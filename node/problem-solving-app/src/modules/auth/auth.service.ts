@@ -13,20 +13,16 @@ export class AuthService {
     ) {}
 
     async register(payload: SignUpRequestDto) {
-        if (!payload) {
-            throw new BadRequestException();
-        }
-
         if (payload.userName) {
-            const userNameIsNotUnique = this.usersServie.findUserByUserName(payload.userName);
+            const userNameAlreadyExists = Boolean(await this.usersServie.findUserByUserName(payload.userName));
 
-            if (userNameIsNotUnique) {
+            if (userNameAlreadyExists) {
                 throw new BadRequestException('User name already exists');
             }
         }
 
         try {
-            const userName = payload.userName ?? payload.email.split('@')[0];
+            const userName = payload.userName ?? payload.email;
             const passHash = await bcrypt.hash(payload.password, 10);
             
             return this.usersServie.createNewUser({
@@ -40,11 +36,7 @@ export class AuthService {
     }
         
     async login(payload: LoginRequestDto) {
-        if (!payload) {
-            throw new BadRequestException();
-        }
-
-        const targetUser = this.usersServie.findUserByEmail(payload.email);
+        const targetUser = await this.usersServie.findUserByEmail(payload.email);
 
         if (!targetUser || !(await bcrypt.compare(payload.password, targetUser.password))) {
             throw new UnauthorizedException();

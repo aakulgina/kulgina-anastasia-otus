@@ -32,6 +32,8 @@ export class User {
 	@Column({
 		type: 'timestamptz',
 		precision: 3,
+		nullable: true,
+		default: null,
 	})
 	lastSeen: Date;
 }

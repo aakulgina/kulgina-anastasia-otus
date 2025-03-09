@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
 	// In case of enabling https
@@ -16,6 +17,8 @@ async function bootstrap() {
 	//     cert: fs.readFileSync('path/to/cert'),
 	// };
 	const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+	app.useGlobalPipes(new ValidationPipe());
 
 	app.enableCors({
 		// TODO Add env var one day or whatever

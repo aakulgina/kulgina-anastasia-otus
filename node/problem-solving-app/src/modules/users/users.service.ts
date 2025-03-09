@@ -16,28 +16,16 @@ export class UsersService {
 
     private users: Array<any> = [];
 
-    createNewUser(user: CreateUserDto) {
-        const payload = {
-            id: Date.now(),
-            ...user,
-            solutions: [],
-            lastSeen: new Date(),
-        }
-
-        // TODO import validate from class-validator
-        // e.g. const errors = await validate(payload)
-
-        this.users.push(payload);
-
-        return payload;
+    createNewUser(user: CreateUserDto): Promise<User> {
+        return this.usersRepository.save(user);
     }
 
     findUserByEmail(email: string) {
-        return this.users.find(user => user.email === email);
+        return this.usersRepository.findOneBy({ email });
     }
 
     findUserByUserName(userName: string) {
-        return this.users.find(user => user.userName === userName);
+        return this.usersRepository.findOneBy({ userName });
     }
 
     getUserById(id: number) {

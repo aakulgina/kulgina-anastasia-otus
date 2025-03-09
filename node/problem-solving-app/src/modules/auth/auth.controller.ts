@@ -61,7 +61,7 @@ export class AuthController {
 	): Promise<SignUpResponseDto> {
 		const user = await this.authService.register(payload);
 
-		return { userId: `${user.id}` };
+		return { userName: `${user.userName}` };
 	}
 
 	@Throttle({

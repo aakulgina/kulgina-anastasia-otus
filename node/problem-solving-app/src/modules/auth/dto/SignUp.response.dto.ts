@@ -7,5 +7,5 @@ export class SignUpResponseDto {
         required: true,
         description: 'New user\'s personal id'
     })
-    userId: string;
+    userName: string;
 }
