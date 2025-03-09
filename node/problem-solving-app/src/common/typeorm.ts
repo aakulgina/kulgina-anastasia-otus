@@ -1,4 +1,5 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 
 export const dbConnectionOptions: TypeOrmModuleOptions = {
 	type: 'postgres',
@@ -8,7 +9,9 @@ export const dbConnectionOptions: TypeOrmModuleOptions = {
 	password: '', // 'Here gonna be some env var or etc', // TODO
 	database: '', // 'Here gonna be some env var or etc', // TODO
 	entities: ['dist/**/*.entity{.ts,.js}'],
-	// migrations: ,
+	migrations: ['src/migrations/**/*'],
 	autoLoadEntities: true,
-	synchronize: process.env.MODE === 'develop',
+	synchronize: false,
 };
+
+export const connectionSource = new DataSource(dbConnectionOptions as DataSourceOptions);

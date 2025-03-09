@@ -5,7 +5,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dbConnectionOptions } from './common/typeorm';
-import { DataSource } from 'typeorm';
 
 @Module({
 	imports: [
@@ -25,5 +24,5 @@ import { DataSource } from 'typeorm';
 	],
 })
 export class AppModule {
-	constructor(private dataSource: DataSource) {}
+	constructor() {}
 }
