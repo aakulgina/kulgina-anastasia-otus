@@ -3,10 +3,6 @@ import { IsEmail, IsString, Length } from "class-validator";
 
 export class GetUserProfileResponseDto {
     @IsString()
-    @ApiProperty({ required: true })
-    id: string;
-    
-    @IsString()
     @Length(3, 50)
     @ApiProperty({ required: true })
     userName: string;

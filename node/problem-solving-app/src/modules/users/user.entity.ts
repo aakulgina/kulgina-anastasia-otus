@@ -26,7 +26,11 @@ export class User {
 	})
 	password: string;
 
-	@OneToMany(_type => Submission, submission => submission.user)
+	@OneToMany(
+		_type => Submission,
+		submission => submission.user,
+		{ cascade: ['remove'] }
+	)
 	solutions: Array<Submission>;
 
 	@Column({

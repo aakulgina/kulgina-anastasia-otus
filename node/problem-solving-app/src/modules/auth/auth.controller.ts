@@ -1,7 +1,10 @@
 import {
 	Body,
 	Controller,
+	Get,
 	HttpCode,
+	HttpException,
+	InternalServerErrorException,
 	Post,
 	Response,
 	UseGuards,
@@ -12,9 +15,11 @@ import { LoginRequestDto } from './dto/Login.request.dto';
 import { AuthService } from './auth.service';
 import { SignUpResponseDto } from './dto/SignUp.response.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { AuthGuard } from './auth.guard';
+import { LoginResponseDto } from './dto/Login.response.dto';
 
 @ApiTags('Auth')
-@ApiExtraModels(SignUpRequestDto, SignUpResponseDto, LoginRequestDto)
+@ApiExtraModels(SignUpRequestDto, SignUpResponseDto, LoginRequestDto, LoginResponseDto)
 @UseGuards(ThrottlerGuard)
 @Controller('auth')
 export class AuthController {
@@ -59,16 +64,16 @@ export class AuthController {
 	async signUp(
 		@Body() payload: SignUpRequestDto,
 	): Promise<SignUpResponseDto> {
-		const user = await this.authService.register(payload);
+		const { userName } = await this.authService.register(payload);
 
-		return { userName: `${user.userName}` };
+		return { userName };
 	}
 
 	@Throttle({
 		default: { ttl: 60_000, limit: 10 },
 	})
 	@Post('login')
-	@HttpCode(204)
+	@HttpCode(200)
 	@ApiBody({
 		description: 'Info needed to login',
 		type: LoginRequestDto,
@@ -82,8 +87,12 @@ export class AuthController {
 		},
 	})
 	@ApiResponse({
-		status: 204,
+		status: 200,
 		description: "Everything's ok",
+		type: LoginResponseDto,
+		example: {
+			userName: 'geek_cactus',
+		},
 	})
 	@ApiResponse({
 		status: 400,
@@ -105,9 +114,9 @@ export class AuthController {
 	async login(
 		@Body() payload: LoginRequestDto,
 		@Response({ passthrough: true }) response,
-	) {
+	): Promise<LoginResponseDto> {
 		try {
-			const { access_token } = await this.authService.login(payload);
+			const { access_token, userName } = await this.authService.login(payload);
 
 			response.cookie('accessToken', access_token, {
 				httpOnly: true,
@@ -115,8 +124,52 @@ export class AuthController {
 				sameSite: 'strict',
 				expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
 			});
+
+			return { userName }
 		} catch (error) {
-			throw error;
+			if (error.message && error.status) {
+                throw new HttpException(error.message, error.status);
+            }
+
+            throw new InternalServerErrorException(error);
+		}
+	}
+
+	@UseGuards(AuthGuard)
+	@Get('logout')
+	@HttpCode(204)
+	@ApiResponse({
+		status: 204,
+		description: "Everything's ok",
+	})
+	@ApiResponse({
+		status: 401,
+		description: 'No such user found or invalid credentials',
+	})
+	@ApiResponse({
+		status: 429,
+		description: 'Too many requests error: Rate limit exceeded',
+	})
+	@ApiResponse({
+		status: 500,
+		description: 'Any internal error occured',
+	})
+	async logout(
+		@Response({ passthrough: true }) response,
+	) {
+		try {
+			response.cookie('accessToken', null, {
+				httpOnly: true,
+				secure: true,
+				sameSite: 'strict',
+				expires: new Date(Date.now() - 3000),
+			});
+		} catch (error) {
+			if (error.message && error.status) {
+                throw new HttpException(error.message, error.status);
+            }
+
+            throw new InternalServerErrorException(error);
 		}
 	}
 }

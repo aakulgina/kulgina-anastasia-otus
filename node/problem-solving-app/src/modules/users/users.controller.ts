@@ -4,8 +4,13 @@ import {
 	Delete,
 	Get,
 	HttpCode,
+	HttpException,
+	InternalServerErrorException,
+	NotFoundException,
 	Param,
 	Patch,
+	Request,
+	Response,
 	UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -36,7 +41,7 @@ export class UsersController {
 	constructor(private readonly usersService: UsersService) {}
 
 	@UseGuards(AuthGuard)
-	@Get(':userId')
+	@Get(':userName')
 	@HttpCode(200)
 	@ApiCookieAuth()
 	@ApiResponse({
@@ -44,7 +49,6 @@ export class UsersController {
 		description: "Everything's ok",
 		type: GetUserProfileResponseDto,
 		example: {
-			id: '123',
 			userName: 'geek_cactus',
 			email: 'abc@google.com',
 			lastSeen: new Date().toISOString(),
@@ -67,22 +71,25 @@ export class UsersController {
 		description: 'Any internal error occured',
 	})
 	async getUserProfile(
-		@Param('userId') userId: string,
+		@Param('userName') userName: string,
 	): Promise<GetUserProfileResponseDto> {
-		const { id, userName, email, lastSeen } = this.usersService.getUserById(
-			Number(userId),
-		);
+		const user = await this.usersService.findUserByUserName(userName);
 
-		return {
-			id: `${id}`,
-			userName,
-			email,
-			lastSeen,
-		};
+		if (!user) {
+			throw new NotFoundException();
+		}
+		
+		const rsPayload: GetUserProfileResponseDto = {
+			userName: user.userName,
+			email: user.email,
+			lastSeen: user.lastSeen,
+		}
+
+		return rsPayload;
 	}
 
 	@UseGuards(AuthGuard)
-	@Patch(':userId')
+	@Patch(':userName')
 	@HttpCode(200)
 	@ApiCookieAuth()
 	@ApiBody({
@@ -104,7 +111,6 @@ export class UsersController {
 			'Profile data changed. Response body contains updated profile info',
 		type: GetUserProfileResponseDto,
 		example: {
-			id: '123',
 			userName: 'geek_cactus',
 			email: 'abc@google.com',
 			lastSeen: new Date().toISOString(),
@@ -129,22 +135,32 @@ export class UsersController {
 		description: 'Any internal error occured',
 	})
 	async changeUserProfileData(
-		@Param('userId') userId: string,
+		@Param('userName') userName: string,
+		@Request() request,
 		@Body() payload: ChangeUserProfileRequestDto,
 	): Promise<GetUserProfileResponseDto> {
-		const { id, userName, email, lastSeen } =
-			this.usersService.changeUserProfile(Number(userId), payload);
+		try {
+			const user = await this.usersService
+				.changeUserInfo(userName, request.cookies['accessToken'], payload);
 
-		return {
-			id: `${id}`,
-			userName,
-			email,
-			lastSeen,
-		};
+			const rsPayload: GetUserProfileResponseDto = {
+				userName: user.userName,
+				email: user.email,
+				lastSeen: user.lastSeen,
+			}
+
+			return rsPayload;
+		} catch (error) {
+			if (error.message && error.status) {
+                throw new HttpException(error.message, error.status);
+            }
+
+            throw new InternalServerErrorException(error);
+		}
 	}
 
 	@UseGuards(AuthGuard)
-	@Patch(':userId/password')
+	@Patch(':userName/password')
 	@HttpCode(204)
 	@ApiCookieAuth()
 	@ApiBody({
@@ -182,14 +198,24 @@ export class UsersController {
 		description: 'Any internal error occured',
 	})
 	async changeUserPassword(
-		@Param('userId') userId: string,
+		@Param('userName') userName: string,
+		@Request() request,
 		@Body() payload: ChangeUserPasswordRequestDto,
 	) {
-		this.usersService.changeUserPassword(Number(userId), payload);
+		try {
+			await this.usersService
+				.changeUserPassword(userName, request.cookies['accessToken'], payload);
+		} catch (error) {
+			if (error.message && error.status) {
+                throw new HttpException(error.message, error.status);
+            }
+
+            throw new InternalServerErrorException(error);
+		}
 	}
 
 	@UseGuards(AuthGuard)
-	@Delete(':userId')
+	@Delete(':userName')
 	@HttpCode(204)
 	@ApiCookieAuth()
 	@ApiResponse({
@@ -209,7 +235,26 @@ export class UsersController {
 		status: 500,
 		description: 'Any internal error occured',
 	})
-	async deleteUserProfile(@Param('userId') userId: string) {
-		this.usersService.deleteUserById(Number(userId));
+	async deleteUserProfile(
+		@Param('userName') userName: string,
+		@Request() request,
+		@Response({ passthrough: true }) response,
+	) {
+		try {
+			await this.usersService.deleteUser(userName, request.cookies['accessToken']);
+
+			response.cookie('accessToken', null, {
+				httpOnly: true,
+				secure: true,
+				sameSite: 'strict',
+				expires: new Date(Date.now() - 3000),
+			});
+		} catch (error) {
+			if (error.message && error.status) {
+                throw new HttpException(error.message, error.status);
+            }
+
+            throw new InternalServerErrorException(error);
+		}
 	}
 }

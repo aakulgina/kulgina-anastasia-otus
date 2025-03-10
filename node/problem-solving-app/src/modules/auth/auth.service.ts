@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -25,16 +25,20 @@ export class AuthService {
             const userName = payload.userName ?? payload.email;
             const passHash = await bcrypt.hash(payload.password, 10);
             
-            return this.usersServie.createNewUser({
+            return this.usersServie.saveUser({
                 userName,
                 email: payload.email,
                 password: passHash,
             });
         } catch (error) {
+            if (error.message && error.status) {
+                throw new HttpException(error.message, error.status);
+            }
+            
             throw new InternalServerErrorException(error);
         }
     }
-        
+
     async login(payload: LoginRequestDto) {
         const targetUser = await this.usersServie.findUserByEmail(payload.email);
 
@@ -47,11 +51,16 @@ export class AuthService {
                 email: targetUser.email,
                 sub: targetUser.id,
             }
+
+            const access_token = this.jwtService.sign(user);
+            await this.usersServie.updateUserLoginInfo(access_token, targetUser.userName)
             
-            return {
-                access_token: this.jwtService.sign(user),
-            }
+            return { access_token, userName: targetUser.userName }
         } catch (error) {
+            if (error.message && error.status) {
+                throw new HttpException(error.message, error.status);
+            }
+
             throw new InternalServerErrorException(error);
         }
     }
