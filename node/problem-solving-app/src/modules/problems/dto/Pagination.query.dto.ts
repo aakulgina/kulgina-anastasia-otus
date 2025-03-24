@@ -1,12 +1,18 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsNumber } from "class-validator";
+import { IsOptional } from "class-validator";
 
 export class PaginationQueryDto {
-    @IsNumber()
-    @ApiPropertyOptional({ required: false })
-    pageSize: number;
+    @IsOptional()
+    @ApiPropertyOptional({
+        required: false,
+        type: 'number',
+    })
+    pageSize?: string;
 
-    @IsNumber()
-    @ApiPropertyOptional({ required: false })
-    pageNumber: number;
+    @IsOptional()
+    @ApiPropertyOptional({
+        required: false,
+        type: 'number',
+    })
+    pageNumber?: string;
 }

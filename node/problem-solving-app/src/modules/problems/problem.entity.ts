@@ -1,7 +1,7 @@
-import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { ProblemDifficulty } from "./enum/ProblemDifficulty.enum";
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Submission } from "./problem.submission.entity";
 import { Topic } from "./problem.topic.entity";
+import { ProblemDifficulty } from "./problem.difficulty.entity";
 
 @Entity()
 export class Problem {
@@ -17,10 +17,7 @@ export class Problem {
     @Column('text')
     description: string;
 
-    @Column({
-        type: 'enum',
-        enum: ProblemDifficulty,
-    })
+    @ManyToOne(_type => ProblemDifficulty, difficulty => difficulty.problems)
     difficulty: ProblemDifficulty;
 
     @ManyToMany(_type => Topic, topic => topic.problems)

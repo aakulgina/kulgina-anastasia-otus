@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDateString, IsEnum, IsNumber } from "class-validator";
+import { IsDateString, IsEnum, IsNumber, IsString } from "class-validator";
 import { ProgLanguage } from "../enum/ProgLanguage.enum";
 
 export class SolutionListDto {
@@ -9,7 +9,11 @@ export class SolutionListDto {
     
     @IsDateString()
     @ApiProperty({ required: true })
-    created: string;
+    created: Date;
+
+    @IsString()
+    @ApiProperty({ required: true })
+    userName: string;
     
     @IsEnum(ProgLanguage, { each: true })
     @ApiProperty({

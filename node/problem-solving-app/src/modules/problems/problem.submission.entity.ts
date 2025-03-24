@@ -1,7 +1,7 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../users/user.entity";
-import { ProgLanguage } from "./enum/ProgLanguage.enum";
 import { Problem } from "./problem.entity";
+import { ProgrammingLanguage } from "./problem.submission.lang.entity";
 
 @Entity()
 export class Submission {
@@ -17,17 +17,15 @@ export class Submission {
     @Column('boolean')
 	correct: boolean;
 
-    @Column({
-		type: 'timestamptz',
+    @CreateDateColumn({
+        type: 'timestamptz',
 		precision: 3,
-	})
+        nullable: false,
+    })
 	created: Date;
 
-    @Column({
-		type: 'enum',
-		enum: ProgLanguage,
-	})
-    lang: ProgLanguage;
+    @ManyToOne(_type => ProgrammingLanguage, lang => lang.submissions)
+    lang: ProgrammingLanguage;
 
     @Column('text')
 	content: string;

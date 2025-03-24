@@ -1,5 +1,5 @@
 import {
-	BadRequestException,
+	HttpException,
 	Injectable,
 	InternalServerErrorException,
 	NotFoundException,
@@ -10,8 +10,6 @@ import { Problem } from './problem.entity';
 import { PaginationQueryDto } from './dto/Pagination.query.dto';
 import { Submission } from './problem.submission.entity';
 import { GetProblemsListResponseDto } from './dto/GetProblemsList.response.dto';
-import { ProblemDifficulty } from './enum/ProblemDifficulty.enum';
-import { ProblemTopic } from './enum/ProblemTopic.enum';
 import { ProblemDto } from './dto/Problem.dto';
 import { GetProblemSolutionsListResponseDto } from './dto/GetProblemSolutionsList.response.dto';
 import { ProgLanguage } from './enum/ProgLanguage.enum';
@@ -19,163 +17,265 @@ import { SolutionDto } from './dto/Solution.dto';
 import { AddNewSolutionResponseDto } from './dto/AddNewSolution.response.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ProblemDifficulty } from './problem.difficulty.entity';
+import { Topic } from './problem.topic.entity';
+import { ProgrammingLanguage } from './problem.submission.lang.entity';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ProblemsService {
 	constructor(
+		private readonly usersService: UsersService,
+
 		@InjectRepository(Problem)
 		private problemsRepository: Repository<Problem>,
 
 		@InjectRepository(Submission)
 		private submissionsRepository: Repository<Submission>,
+
+		@InjectRepository(ProblemDifficulty)
+		private problemDifficultiesRepository: Repository<ProblemDifficulty>,
+
+		@InjectRepository(Topic)
+		private topicsRepository: Repository<Topic>,
+
+		@InjectRepository(ProgrammingLanguage)
+		private progLangsRepository: Repository<ProgrammingLanguage>,
 	) {}
 
-	// TODO Place db connection here later
-	private problems: Array<any> = [];
-	private solutions: Array<any> = [];
-
-	getProblemsList(
+	async getProblemsList(
+		page: { pageSize: number; pageNumber: number},
 		filters?: ProblemsListFilter,
-		page?: PaginationQueryDto,
-	): GetProblemsListResponseDto {
+	): Promise<GetProblemsListResponseDto> {
 		try {
-			console.log(
-				`Hello getProblemsList, I got ${Object.keys(filters ?? {}).length ? 'some' : 'no'} filters and ${Object.keys(page ?? {}).length ? 'some' : 'no'} info about pagination`,
-			);
+			const query = this.problemsRepository.createQueryBuilder('problem');
+
+			query
+				.leftJoinAndSelect('problem.difficulty', 'problem_difficulty')
+				.leftJoinAndSelect('problem.topics', 'topics');
+
+			if (filters?.difficulty?.length) {
+				query
+					.andWhere("difficulty IN (:...diffValues)", { diffValues: filters.difficulty });
+			}
+
+			if (filters?.topics?.length) {
+				query
+					.andWhere("topic IN (:...topicValues)", { topicValues: filters.topics });
+			}
+
+			query
+				.skip((page.pageNumber - 1) * page.pageSize)
+				.take(page.pageSize);
+
+			const [problems, amount] = await query.getManyAndCount();
+
+			const totalPages = Math.ceil(amount / page.pageSize);
+
+			if ((totalPages > 0) && (page.pageSize * page.pageNumber) > (page.pageSize * totalPages)) {
+				throw new NotFoundException('Page not found');
+			}
 
 			const payload: GetProblemsListResponseDto = {
-				total: 1,
+				total: amount,
 				page: {
-					pageNumber: 1,
-					pageSize: 10,
-					totalPages: 1,
+					pageNumber: page.pageNumber,
+					pageSize: page.pageSize,
+					totalPages: totalPages,
 				},
-				problems: [
-					{
-						id: 1,
-						title: 'Hello world!',
-						difficulty: ProblemDifficulty.EASY,
-						topics: [ProblemTopic.STRING],
-					},
-				],
+				problems: problems.map(item => ({
+					...item,
+					difficulty: item.difficulty.difficulty,
+					topics: item.topics.map(topic => topic.topic)
+				})),
 			};
 
 			return payload;
 		} catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+					
 			throw new InternalServerErrorException(error);
 		}
 	}
 
-	getProblem(problemId: string): ProblemDto {
-		if (!problemId) {
-			throw new NotFoundException();
-		}
-
+	async getProblem(problemId: number): Promise<ProblemDto> {
 		try {
-			console.log(
-				`Hello getProblem, I gonna find you the problem with the following id: ${problemId}`,
-			);
+			const query = this.problemsRepository.createQueryBuilder('problem');
+
+			query
+				.leftJoinAndSelect('problem.difficulty', 'problem_difficulty')
+				.leftJoinAndSelect('problem.topics', 'topics')
+				.andWhere('problem.id = :payloadId', { payloadId: problemId });
+
+			const problem = await query.getOne();
+			
+			if (!problem) {
+				throw new NotFoundException('Problem not found')
+			}
 
 			return {
-				id: 1,
-				title: 'Hello world!',
-				description: 'Print "Hello world!"',
-				difficulty: ProblemDifficulty.EASY,
-				topics: [ProblemTopic.STRING],
+				...problem,
+				difficulty: problem.difficulty.difficulty,
+				topics: problem.topics.map(topic => topic.topic),
 			};
 		} catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
 			throw new InternalServerErrorException(error);
 		}
 	}
 
-	getProblemSolutionsList(
-		problemId: string,
-		userId?: string,
-		page?: PaginationQueryDto,
-	): GetProblemSolutionsListResponseDto {
-		if (!problemId) {
-			throw new NotFoundException();
-		}
-
+	async getProblemSolutionsList(
+		problemId: number,
+		page: { pageSize: number; pageNumber: number},
+		userName?: string,
+	): Promise<GetProblemSolutionsListResponseDto> {
 		try {
-			console.log(
-				`Hello getProblemSolutionsList, I gonna list you all the solutions for the problem with the following id: ${problemId}` +
-					(userId
-						? `. I gonna do it for the user with id ${userId}`
-						: ''),
-			);
-			console.log(page);
+			const problem = await this.problemsRepository.findOneBy({ id: problemId });
+
+			if (!problem) {
+				throw new NotFoundException('Related problem not found');
+			}
+
+			const query = this.submissionsRepository.createQueryBuilder('submission');
+
+			query
+				.leftJoinAndSelect('submission.problem', 'problem')
+				.leftJoinAndSelect('submission.user', 'user')
+				.leftJoinAndSelect('submission.lang', 'programming_language')
+				.andWhere('problem.id = :payloadProblemId', { payloadProblemId: problemId });
+
+			if (userName) {
+				const user = await this.usersService.findUserByUserName(userName);
+
+				if (!user) {
+					throw new NotFoundException('Related user not found');
+				}
+
+				query
+					.andWhere('"userName" = :payloadUserName', { payloadUserName: userName });
+			}
+
+			query
+				.skip((page.pageNumber - 1) * page.pageSize)
+				.take(page.pageSize);
+
+			const [submissions, amount] = await query.getManyAndCount();
+
+			const totalPages = Math.ceil(amount / page.pageSize);
+
+			if ((totalPages > 0) && (page.pageSize * page.pageNumber) > (page.pageSize * totalPages)) {
+				throw new NotFoundException('Page not found');
+			}
 
 			const payload: GetProblemSolutionsListResponseDto = {
-				problemId: '1',
-				total: 1,
+				problemId: problemId,
+				total: amount,
 				page: {
-					pageSize: 10,
-					pageNumber: 1,
-					totalPages: 1,
+					pageNumber: page.pageNumber,
+					pageSize: page.pageSize,
+					totalPages: totalPages,
 				},
-				solutions: [
-					{
-						id: 1,
-						created: new Date().toISOString(),
-						lang: ProgLanguage.TYPESCRIPT,
-					},
-				],
+				solutions: submissions.map((item => ({
+					id: item.id,
+					created: item.created,
+					userName: item.user.userName,
+					lang: item.lang.progLang,
+				})))
 			};
 
 			return payload;
 		} catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
 			throw new InternalServerErrorException(error);
 		}
 	}
 
-	getProblemSolution(problemId: string, solutionId: string): SolutionDto {
-		if (!problemId || !solutionId) {
-			throw new NotFoundException();
-		}
-
+	async getProblemSolution(problemId: number, solutionId: number): Promise<SolutionDto> {
 		try {
-			console.log(
-				`Hello getProblemSolution, I gonna give you the solution with id ${solutionId} for the problem with id ${problemId}`,
-			);
+			const problem = await this.problemsRepository.findOneBy({ id: problemId });
+
+			if (!problem) {
+				throw new NotFoundException('Related problem not found');
+			}
+
+			const query = this.submissionsRepository.createQueryBuilder('submission');
+
+			query
+				.leftJoinAndSelect('submission.problem', 'problem')
+				.leftJoinAndSelect('submission.user', 'user')
+				.leftJoinAndSelect('submission.lang', 'programming_language')
+				.andWhere('submission.id = :payloadSubmissionId', { payloadSubmissionId: solutionId })
+				.andWhere('problem.id = :payloadProblemId', { payloadProblemId: problemId });
+
+			const submission = await query.getOne();
+
+			if (!submission) {
+				throw new NotFoundException('Submission not found');
+			}
 
 			const payload: SolutionDto = {
-				id: 1,
-				userName: 'geek_cactus',
-				correct: false,
-				created: new Date().toISOString(),
-				lang: ProgLanguage.TYPESCRIPT,
-				content: 'Your solution here',
+				id: submission.id,
+				userName: submission.user.userName,
+				correct: submission.correct,
+				created: submission.created,
+				lang: submission.lang.progLang,
+				content: submission.content,
+				problemId: submission.problem.id,
 			};
 
 			return payload;
 		} catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
 			throw new InternalServerErrorException(error);
 		}
 	}
 
-	addNewSolution(
-		problemId: string,
+	async addNewSolution(
+		problemId: number,
 		solution: AddNewSolutionRequestDto,
-	): AddNewSolutionResponseDto {
-		if (!problemId) {
-			throw new NotFoundException();
-		}
-
-		if (!solution) {
-			throw new BadRequestException();
-		}
-
+		accessToken: string,
+	): Promise<AddNewSolutionResponseDto> {
 		try {
-			console.log(
-				`Hello addNewSolution, I gonna add new solution to the problem with id ${[problemId]}`,
-			);
+			const problemForPayload = await this.problemsRepository.findOneBy({ id: problemId });
 
-			const payload = { submissionId: '444' };
+			if (!problemForPayload) {
+				throw new NotFoundException('Related problem not found');
+			}
 
-			return payload;
-		} catch (_error) {
-			throw new InternalServerErrorException();
+			const langForPayload = await this.progLangsRepository.findOneBy({ progLang: solution.lang });
+
+			if (!langForPayload) {
+				throw new NotFoundException('Related programming language not found');
+			}
+
+			const userForPayload = await this.usersService.getVerifiedUser(accessToken, solution.userName);
+
+			const newSubmission = await this.submissionsRepository.save({
+				problem: problemForPayload,
+				user: userForPayload,
+				correct: Math.random() >= 0.5,
+				lang: langForPayload,
+				content: solution.content,
+			});
+
+			return { submissionId: newSubmission.id.toString() };
+		} catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
+			throw new InternalServerErrorException(error);
 		}
 	}
 }

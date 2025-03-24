@@ -6,7 +6,7 @@ import { SolutionListDto } from "./SolutionList.dto";
 export class GetProblemSolutionsListResponseDto {
     @IsString()
     @ApiProperty({ required: true })
-    problemId: string;
+    problemId: number;
 
     @IsNumber()
     @ApiProperty({ required: true })

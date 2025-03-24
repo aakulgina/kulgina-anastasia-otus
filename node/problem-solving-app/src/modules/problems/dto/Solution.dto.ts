@@ -17,7 +17,7 @@ export class SolutionDto {
     
     @IsDateString()
     @ApiProperty({ required: true })
-    created: string;
+    created: Date;
     
     @IsEnum(ProgLanguage, { each: true })
     @ApiProperty({
@@ -29,4 +29,8 @@ export class SolutionDto {
     @IsString()
     @ApiProperty({ required: true })
     content: string;
+
+    @IsNumber()
+    @ApiProperty({ required: true })
+    problemId: number;
 }

@@ -12,6 +12,10 @@ export class ProblemListDto {
     @ApiProperty({ required: true })
     title: string;
 
+    @IsString()
+    @ApiProperty({ required: true })
+    description: string;
+
     @IsEnum(ProblemDifficulty, { each: true })
     @ApiProperty({
         required: true,

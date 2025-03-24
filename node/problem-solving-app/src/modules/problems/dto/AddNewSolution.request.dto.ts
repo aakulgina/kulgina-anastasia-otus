@@ -5,7 +5,7 @@ import { ApiProperty } from "@nestjs/swagger";
 export class AddNewSolutionRequestDto {
     @IsString()
     @ApiProperty({ required: true })
-    userId: string;
+    userName: string;
 
     @IsEnum(ProgLanguage, { each: true })
     @ApiProperty({

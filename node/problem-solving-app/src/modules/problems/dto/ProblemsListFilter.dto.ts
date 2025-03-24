@@ -1,13 +1,10 @@
 import { IsOptional, IsArray, ArrayNotEmpty, IsEnum } from 'class-validator';
 import { ProblemDifficulty } from '../enum/ProblemDifficulty.enum';
-import { ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ProblemTopic } from '../enum/ProblemTopic.enum';
-import { Transform } from 'class-transformer';
 
 export class ProblemsListFilter {
     @IsOptional()
-    @IsArray()
-    @ArrayNotEmpty()
     @IsEnum(ProblemDifficulty, { each: true })
     @ApiPropertyOptional({
         required: false,
@@ -18,10 +15,7 @@ export class ProblemsListFilter {
     difficulty?: Array<ProblemDifficulty>;
 
     @IsOptional()
-    @IsArray()
-    @ArrayNotEmpty()
     @IsEnum(ProblemTopic, { each: true })
-    @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
     @ApiPropertyOptional({
         required: false,
         isArray: true,

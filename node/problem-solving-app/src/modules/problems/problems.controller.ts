@@ -1,11 +1,18 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
+	DefaultValuePipe,
 	Get,
 	HttpCode,
+	HttpException,
+	InternalServerErrorException,
 	Param,
+	ParseArrayPipe,
+	ParseIntPipe,
 	Post,
 	Query,
+	Request,
 	UseGuards,
 } from '@nestjs/common';
 import { ProblemsService } from './problems.service';
@@ -33,6 +40,7 @@ import { ProblemDto } from './dto/Problem.dto';
 import { SolutionListDto } from './dto/SolutionList.dto';
 import { SolutionDto } from './dto/Solution.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { min } from 'class-validator';
 
 @ApiTags('Problems')
 @ApiExtraModels(
@@ -65,6 +73,7 @@ export class ProblemsController {
 				{
 					id: 1,
 					title: 'Hello world!',
+					description: 'Hello world!',
 					difficulty: ProblemDifficulty.EASY,
 					topics: [ProblemTopic.STRING],
 				},
@@ -77,6 +86,10 @@ export class ProblemsController {
 		},
 	})
 	@ApiResponse({
+		status: 400,
+		description: 'Problems with query params: one or more values do not fit corresponding enums',
+	})
+	@ApiResponse({
 		status: 429,
 		description: 'Too many requests error: Rate limit exceeded',
 	})
@@ -85,10 +98,40 @@ export class ProblemsController {
 		description: 'Any internal error occured',
 	})
 	async getProblemsList(
-		@Query() filters: ProblemsListFilter,
-		@Query() page: PaginationQueryDto,
+		@Query() { difficulty, topics }: ProblemsListFilter,
+		@Query() { pageNumber, pageSize }: PaginationQueryDto,
 	): Promise<GetProblemsListResponseDto> {
-		return this.problemsService.getProblemsList(filters, page);
+		try {
+			const arrayParser = new ParseArrayPipe({ optional: true });
+			const numberParser = new ParseIntPipe({ optional: true });
+
+			const parsedPageSize = await new DefaultValuePipe(10).transform(
+				await numberParser.transform(pageSize, { type: 'query' })
+			);
+			const parsedPageNumber = await new DefaultValuePipe(1).transform(
+				await numberParser.transform(pageNumber, { type: 'query' })
+			);
+
+			if (!(min(parsedPageNumber, 1) && min(parsedPageSize, 1))) {
+				throw new BadRequestException('Validation failed (min value of 1 expected)')
+			}
+ 
+			const problemsList = await this.problemsService.getProblemsList(
+				{ pageNumber: parsedPageNumber, pageSize: parsedPageSize },
+				{
+					difficulty: await arrayParser.transform(difficulty, { type: 'query' }),
+					topics: await arrayParser.transform(topics, { type: 'query' }),
+				}
+			);
+
+			return problemsList;
+		} catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
+			throw new InternalServerErrorException(error);
+		}
 	}
 
 	@Get(':problemId')
@@ -118,20 +161,30 @@ export class ProblemsController {
 		description: 'Any internal error occured',
 	})
 	async getProblem(
-		@Param('problemId') problemId: string,
+		@Param('problemId', ParseIntPipe) problemId: number,
 	): Promise<ProblemDto> {
-		return this.problemsService.getProblem(problemId);
+		try {
+			const problem = await this.problemsService.getProblem(problemId);
+
+			return problem;
+		} catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
+			throw new InternalServerErrorException(error);
+		}
 	}
 
 	@Get(':problemId/solutions')
 	@HttpCode(200)
-	@ApiQuery({ name: 'userId', required: false })
+	@ApiQuery({ name: 'userName', required: false })
 	@ApiResponse({
 		status: 200,
 		description: "Everything's ok",
 		type: GetProblemSolutionsListResponseDto,
 		example: {
-			problemId: '1',
+			problemId: 1,
 			total: 1,
 			page: {
 				pageSize: 10,
@@ -143,6 +196,7 @@ export class ProblemsController {
 					id: 1,
 					created: new Date().toISOString(),
 					lang: ProgLanguage.TYPESCRIPT,
+					userName: 'geek_cactus',
 				},
 			],
 		},
@@ -160,15 +214,38 @@ export class ProblemsController {
 		description: 'Any internal error occured',
 	})
 	async getProblemSolutionsList(
-		@Param('problemId') problemId: string,
-		@Query() page: PaginationQueryDto,
-		@Query('userId') userId?: string,
+		@Param('problemId', ParseIntPipe) problemId: number,
+		@Query() { pageNumber, pageSize }: PaginationQueryDto,
+		@Query('userName') userName?: string,
 	): Promise<GetProblemSolutionsListResponseDto> {
-		return this.problemsService.getProblemSolutionsList(
-			problemId,
-			userId,
-			page,
-		);
+		try {
+			const numberParser = new ParseIntPipe({ optional: true });
+
+			const parsedPageSize = await new DefaultValuePipe(10).transform(
+				await numberParser.transform(pageSize, { type: 'query' })
+			);
+			const parsedPageNumber = await new DefaultValuePipe(1).transform(
+				await numberParser.transform(pageNumber, { type: 'query' })
+			);
+
+			if (!(min(parsedPageNumber, 1) && min(parsedPageSize, 1))) {
+				throw new BadRequestException('Validation failed (min value of 1 expected)')
+			}
+
+			const solutionsList = await this.problemsService.getProblemSolutionsList(
+				problemId,
+				{ pageNumber: parsedPageNumber, pageSize: parsedPageSize },
+				userName,
+			);
+
+			return solutionsList;
+		}  catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
+			throw new InternalServerErrorException(error);
+		}
 	}
 
 	@UseGuards(AuthGuard)
@@ -182,7 +259,7 @@ export class ProblemsController {
 		examples: {
 			example1: {
 				value: {
-					userId: '123',
+					userName: 'geek_cactus',
 					lang: ProgLanguage.TYPESCRIPT,
 					content: 'Your solution here',
 				},
@@ -219,10 +296,21 @@ export class ProblemsController {
 		description: 'Any internal error occured',
 	})
 	async addNewSolution(
-		@Param('problemId') problemId: string,
+		@Param('problemId', ParseIntPipe) problemId: number,
 		@Body() solutionPayload: AddNewSolutionRequestDto,
+		@Request() request,
 	): Promise<AddNewSolutionResponseDto> {
-		return this.problemsService.addNewSolution(problemId, solutionPayload);
+		try {
+			const submission = this.problemsService.addNewSolution(problemId, solutionPayload, request.cookies['accessToken']);
+
+			return submission;
+		}  catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
+			throw new InternalServerErrorException(error);
+		}
 	}
 
 	@Get(':problemId/solutions/:solutionId')
@@ -238,6 +326,7 @@ export class ProblemsController {
 			created: new Date().toISOString(),
 			lang: ProgLanguage.TYPESCRIPT,
 			content: 'Your solution here',
+			problemId: 1,
 		},
 	})
 	@ApiResponse({
@@ -253,9 +342,19 @@ export class ProblemsController {
 		description: 'Any internal error occured',
 	})
 	async getProblemSolution(
-		@Param('problemId') problemId: string,
-		@Param('solutionId') solutionId: string,
+		@Param('problemId', ParseIntPipe) problemId: number,
+		@Param('solutionId', ParseIntPipe) solutionId: number,
 	): Promise<SolutionDto> {
-		return this.problemsService.getProblemSolution(problemId, solutionId);
+		try {
+			const submission = await this.problemsService.getProblemSolution(problemId, solutionId);
+
+			return submission;
+		}  catch (error) {
+			if (error.message && error.status) {
+				throw new HttpException(error.message, error.status);
+			}
+			
+			throw new InternalServerErrorException(error);
+		}
 	}
 }
