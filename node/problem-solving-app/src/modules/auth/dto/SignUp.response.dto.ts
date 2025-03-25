@@ -5,7 +5,7 @@ export class SignUpResponseDto {
     @IsString()
     @ApiProperty({
         required: true,
-        description: 'New user\'s personal id'
+        description: 'New user\'s name'
     })
     userName: string;
 }

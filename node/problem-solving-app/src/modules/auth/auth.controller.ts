@@ -45,7 +45,7 @@ export class AuthController {
 		description: 'New user created',
 		type: SignUpResponseDto,
 		example: {
-			userId: '123',
+			userName: 'geek_cactus',
 		},
 	})
 	@ApiResponse({
