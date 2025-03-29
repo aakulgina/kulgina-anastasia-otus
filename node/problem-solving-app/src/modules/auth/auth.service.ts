@@ -8,13 +8,13 @@ import { LoginRequestDto } from './dto/Login.request.dto';
 @Injectable()
 export class AuthService {
     constructor(
-        private readonly usersServie: UsersService,
+        private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
     ) {}
 
     async register(payload: SignUpRequestDto) {
         if (payload.userName) {
-            const userNameAlreadyExists = Boolean(await this.usersServie.findUserByUserName(payload.userName));
+            const userNameAlreadyExists = Boolean(await this.usersService.findUserByUserName(payload.userName));
 
             if (userNameAlreadyExists) {
                 throw new BadRequestException('User name already exists');
@@ -25,7 +25,7 @@ export class AuthService {
             const userName = payload.userName ?? payload.email;
             const passHash = await bcrypt.hash(payload.password, 10);
             
-            return this.usersServie.saveUser({
+            return this.usersService.saveUser({
                 userName,
                 email: payload.email,
                 password: passHash,
@@ -40,7 +40,7 @@ export class AuthService {
     }
 
     async login(payload: LoginRequestDto) {
-        const targetUser = await this.usersServie.findUserByEmail(payload.email);
+        const targetUser = await this.usersService.findUserByEmail(payload.email);
 
         if (!targetUser || !(await bcrypt.compare(payload.password, targetUser.password))) {
             throw new UnauthorizedException();
@@ -53,7 +53,7 @@ export class AuthService {
             }
 
             const access_token = this.jwtService.sign(user);
-            await this.usersServie.updateUserLoginInfo(access_token, targetUser.userName)
+            await this.usersService.updateUserLoginInfo(access_token, targetUser.userName)
             
             return { access_token, userName: targetUser.userName }
         } catch (error) {
